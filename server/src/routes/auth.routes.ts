@@ -1,14 +1,40 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
-router.post('/register', (req, res, next) => authController.register(req, res, next));
-router.post('/login', (req, res, next) => authController.login(req, res, next));
-router.post('/logout', authenticate, (req, res, next) => authController.logout(req, res, next));
-router.get('/me', authenticate, (req, res, next) => authController.me(req, res, next));
-router.post('/forgot-password', (req, res, next) => authController.forgotPassword(req, res, next));
-router.post('/reset-password', (req, res, next) => authController.resetPassword(req, res, next));
+router.post(
+  '/register',
+  asyncHandler((req, res) => authController.register(req, res))
+);
+
+router.post(
+  '/login',
+  asyncHandler((req, res) => authController.login(req, res))
+);
+
+router.post(
+  '/logout',
+  authenticate,
+  asyncHandler((req, res) => authController.logout(req, res))
+);
+
+router.get(
+  '/me',
+  authenticate,
+  asyncHandler((req, res) => authController.me(req, res))
+);
+
+router.post(
+  '/forgot-password',
+  asyncHandler((req, res) => authController.forgotPassword(req, res))
+);
+
+router.post(
+  '/reset-password',
+  asyncHandler((req, res) => authController.resetPassword(req, res))
+);
 
 export default router;
