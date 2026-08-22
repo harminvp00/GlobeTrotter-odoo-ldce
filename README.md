@@ -127,7 +127,7 @@ Once running:
 - **Frontend (Client)**: http://localhost:5173
 - **Backend (Server)**: http://localhost:5000
 
-## 11. Environment Variables
+## 11. Environment Variables.
 ### Server (`server/.env`)
 - `DATABASE_URL`: PostgreSQL connection string.
 - `PORT`: Server port (default `5000`).
