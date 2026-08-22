@@ -192,6 +192,64 @@ export class StopService {
 
     return { message: 'Stop deleted successfully' };
   }
+
+  async assignActivity(tripId: string, stopId: string, userId: string, data: { activityId: string; date: string; notes?: string }) {
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+    });
+    if (!trip || trip.userId !== userId) {
+      throw new AppError('Forbidden: Access denied', 403);
+    }
+
+    const stop = await prisma.tripStop.findUnique({
+      where: { id: stopId },
+    });
+    if (!stop || stop.tripId !== tripId) {
+      throw new AppError('Stop not found', 404);
+    }
+
+    const activity = await prisma.activity.findUnique({
+      where: { id: data.activityId },
+    });
+    if (!activity) {
+      throw new AppError('Activity not found', 404);
+    }
+
+    const existingActivities = await prisma.stopActivity.findMany({
+      where: { tripStopId: stopId },
+    });
+    const order = existingActivities.length + 1;
+
+    const stopActivity = await prisma.stopActivity.create({
+      data: {
+        tripStopId: stopId,
+        activityId: data.activityId,
+        date: new Date(data.date),
+        order,
+        notes: data.notes || '',
+      },
+      include: {
+        activity: true,
+      },
+    });
+
+    return stopActivity;
+  }
+
+  async unassignActivity(tripId: string, stopId: string, userId: string, stopActivityId: string) {
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+    });
+    if (!trip || trip.userId !== userId) {
+      throw new AppError('Forbidden: Access denied', 403);
+    }
+
+    await prisma.stopActivity.delete({
+      where: { id: stopActivityId },
+    });
+
+    return { message: 'Activity unassigned successfully' };
+  }
 }
 
 export const stopService = new StopService();

@@ -45,6 +45,27 @@ export class StopController {
     const result = await stopService.deleteStop(tripId, stopId, req.user.id);
     sendSuccess(res, null, result.message, 200);
   }
+
+  async assignActivity(req: Request, res: Response): Promise<void> {
+    if (!req.user || !req.user.id) {
+      throw new AppError('Unauthorized: User context missing', 401);
+    }
+    const tripId = req.params.tripId as string;
+    const stopId = req.params.stopId as string;
+    const stopActivity = await stopService.assignActivity(tripId, stopId, req.user.id, req.body);
+    sendSuccess(res, stopActivity, 'Activity assigned successfully', 201);
+  }
+
+  async unassignActivity(req: Request, res: Response): Promise<void> {
+    if (!req.user || !req.user.id) {
+      throw new AppError('Unauthorized: User context missing', 401);
+    }
+    const tripId = req.params.tripId as string;
+    const stopId = req.params.stopId as string;
+    const stopActivityId = req.params.stopActivityId as string;
+    const result = await stopService.unassignActivity(tripId, stopId, req.user.id, stopActivityId);
+    sendSuccess(res, null, result.message, 200);
+  }
 }
 
 export const stopController = new StopController();
