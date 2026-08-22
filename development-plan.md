@@ -1,355 +1,432 @@
 # GlobeTrotter — Development Plan
 
-This document serves as the shared contract and reference guide for the three developers (Harmin, Ashish V., and Ashish G.) working on GlobeTrotter.
+This document serves as the official design blueprint, shared contract, and reference guide for the GlobeTrotter development team (Harmin, Ashish V., and Ashish G.).
 
 ---
 
-## 1. Project Description & Architecture
-GlobeTrotter is a personalized travel planner that helps users build multi-city itineraries, manage budgets, discover local spots/activities, and share travel plans.
-The project uses a decoupled **React client** and an **Express.js server** with a **PostgreSQL** database managed via **Prisma 6**.
+## 1. Project Vision, Mission, & Problem Statement
+*As specified in `GlobeTrotter.pdf`:*
+
+### Vision
+To become a personalized, intelligent, and collaborative platform that transforms the way individuals plan and experience travel. The platform empowers users to dream, design, and organize trips with ease by offering an end-to-end travel planning tool that combines flexibility, interactivity, cost-effective decision-making, and public community sharing.
+
+### Mission
+To build a user-centric, responsive application that simplifies the complexity of planning multi-city travel. The platform provides travelers with intuitive tools to:
+*   Add and manage travel stops and durations.
+*   Explore cities and activities of interest.
+*   Estimate trip budgets automatically.
+*   Visualize timelines and plans.
+*   Share trip plans with others.
+
+### Problem Statement
+Design and develop a complete travel planning application supporting customized multi-city itineraries, assignment of travel dates, activities, and budgets, discovery via search, financial cost breakdowns, visual calendars, and public sharing capability—backed by a secure relational database.
 
 ---
 
-## 2. Team Responsibilities
-- **Harmin Vekariya (Frontend Developer)**:
-  - React, TypeScript, Context API for client-side state.
-  - Responsive layouts using Tailwind CSS.
-  - Client-side validation (dates, inputs, budgets).
-  - API integration based on the documented contracts.
-- **Ashish Vekariya (Backend Developer)**:
-  - Express.js, TypeScript, Zod validation.
-  - Authentication (password hashing, session/token management).
-  - Secure routes with authorization and ownership checks.
-  - Prisma database queries.
-- **Ashish Gokani (Testing & Integration Developer)**:
-  - Pull and test feature branches before merging.
-  - Integration testing between client and server.
-  - Boundary and validation failure checks.
-  - Mobile responsiveness and layout testing.
+## 2. Decoupled Architecture & Team Responsibilities
+
+### Harmin Vekariya (Frontend Developer)
+*   **Technologies**: React, TypeScript, Context API, Tailwind CSS v4.
+*   **Responsibilities**:
+    *   Build clean, modern, and accessible layouts based on the Excalidraw mockups.
+    *   Implement user interfaces that scale responsively from 375px (mobile) to 1920px (Full HD).
+    *   Leverage global React Context to manage active login sessions and active trip configurations.
+    *   Implement client-side date boundary verification (e.g. stop dates must lie within trip dates).
+
+### Ashish Vekariya (Backend Developer)
+*   **Technologies**: Express.js, Node.js, TypeScript, Prisma 6 ORM, PostgreSQL.
+*   **Responsibilities**:
+    *   Formulate a secure, stateless JSON REST API.
+    *   Validate all incoming request bodies, parameters, and query parameters via Zod schemas.
+    *   Build secure authentication utilizing JWTs stored and transmitted securely.
+    *   Implement rigorous ownership validation: users must not read, edit, or delete another user's private data.
+
+### Ashish Gokani (Testing & Integration Developer)
+*   **Responsibilities**:
+    *   Validate API request/response structures against the specifications below.
+    *   Perform security boundary checking (e.g. verifying that a user receives `403 Forbidden` when accessing unauthorized private trips).
+    *   Verify responsive design layouts on key device viewports.
+    *   Approve pull requests and merge feature branches into `main` after verifying integration.
 
 ---
 
-## 3. Git Workflow
-The workflow consists of dedicated feature branches that merge into `main` after verification:
+## 3. Git Branching Workflow
+To maintain code sanity and support parallel developer iteration, we enforce a strict branching protocol:
 ```
 Ashish Vekariya (Backend Development)
-        ↓ (push)
-Branch: server-[feature] (e.g. server-auth)
-        ↓ (Harmin pulls)
+        ↓ (Pushes tested backend features)
+Branch: server-[feature] (e.g., server-auth, server-trips)
+        ↓ (Harmin pulls server branch to integrate and develop client UI)
 Harmin Vekariya (Frontend Integration & UI)
-        ↓ (push)
-Branch: client-[feature] (e.g. client-auth)
-        ↓ (Ashish Gokani pulls)
+        ↓ (Pushes completed integration)
+Branch: client-[feature] (e.g., client-auth, client-trips)
+        ↓ (Ashish Gokani pulls client branch for verification checks)
 Ashish Gokani (Testing & Validation Checks)
-        ↓ (Approve and Merge)
-Branch: main
+        ↓ (Approves and merges)
+Branch: main (Production Branch)
 ```
-*Note*: No force-pushing on `main`. All merges require test approval.
-
----
-
-## 4. Folder Structure
-```
-globetrotter/
-├── client/
-│   ├── public/
-│   └── src/
-│       ├── components/    # Common and reusable UI modules
-│       ├── pages/         # Page-level components
-│       ├── context/       # Context API files for global state
-│       ├── services/      # API communication methods
-│       ├── types/         # Core TypeScript definitions
-│       ├── App.tsx
-│       └── main.tsx
-└── server/
-    ├── prisma/
-    │   └── schema.prisma  # Schema source of truth (Prisma 6)
-    └── src/
-        ├── controllers/   # Route handler actions
-        ├── routes/        # Express route definitions
-        ├── middleware/    # Auth, validation, error-handling middleware
-        ├── schemas/       # Zod verification validation models
-        ├── lib/           # Prisma Client helper instance
-        └── server.ts      # Server listener configuration
-```
-
----
-
-## 5. Database Entities & Relationships
-### Schema Models
-- **User**: System user record with secure hashed passwords.
-- **UserPreference**: Settings linked to a single user (e.g., preferred language).
-- **Trip**: High-level trip details (budget, dates, visibility).
-- **City**: Static database of cities (cost index, lat/long).
-- **TripStop**: Specific cities/stops planned inside a trip, sequenced via an `order` field.
-- **Activity**: Curated activities corresponding to cities.
-- **StopActivity**: Specific activities assigned by a user to a trip stop.
-- **Expense**: Expenditures tracked inside a trip.
-- **TripShare**: Access permissions allowing other users to view/edit.
-- **SavedDestination**: User's wishlist of cities.
-
-### Relationships
-```
-User
- ├── Trip
- │    ├── TripStop
- │    │    ├── City
- │    │    └── StopActivity ── Activity
- │    ├── Expense
- │    └── TripShare
- ├── UserPreference
- └── SavedDestination ── City
-```
-
----
-
-## 6. Wireframe-First & Module Creation Rules
 > [!IMPORTANT]
-> **Wireframe-First Rule**: Do not create or implement a page UI unless a wireframe has been provided. If the user requests a page without a wireframe, request the wireframe.
->
-> **Module Creation Rule**: Avoid creating empty files or placeholder folders for features not yet under development. Build only what is actively required for the current feature block.
+> **No Direct Pushes to Main**: All code additions must flow through the above pipeline. No merge is allowed on `main` without verification by Ashish Gokani.
 
 ---
 
-## 7. API Conventions
-- **RESTful Routes**: Prefer nouns, correct HTTP verbs, and nested resource endpoints.
-- **Format**: All success and error payloads must return consistent JSON structures.
-- **Keys**: CamelCase (e.g. `tripId`, `startDate`, `passwordHash`).
-- **Validation**: All incoming payloads (body, query, params) must be validated with Zod.
-- **Security**: Verification checks must occur on every resource access request to ensure users only mutate or view their own private resources.
+## 4. Product Modules & Screen Mapping (13 Screens)
+Below is the mapping of all 13 screens defined in the project specification to their code locations:
+
+| ID | Screen Name (from PDF) | React Component Location | Express Router Location | Core Database Entities |
+|----|-------------------------|--------------------------|-------------------------|-----------------------|
+| 1 | **Login / Signup** | `client/src/pages/Auth.tsx` | `server/src/routes/auth.ts` | `User` |
+| 2 | **Dashboard / Home** | `client/src/pages/Dashboard.tsx` | `server/src/routes/dashboard.ts` | `Trip`, `City`, `User` |
+| 3 | **Create Trip** | `client/src/pages/CreateTrip.tsx` | `server/src/routes/trips.ts` | `Trip` |
+| 4 | **My Trips (List)** | `client/src/pages/MyTrips.tsx` | `server/src/routes/trips.ts` | `Trip` |
+| 5 | **Itinerary Builder** | `client/src/pages/ItineraryBuilder.tsx` | `server/src/routes/stops.ts` | `TripStop`, `City` |
+| 6 | **Itinerary View** | `client/src/pages/ItineraryView.tsx` | `server/src/routes/trips.ts` | `Trip`, `TripStop`, `StopActivity` |
+| 7 | **City Search** | `client/src/components/CitySearch.tsx` | `server/src/routes/cities.ts` | `City` |
+| 8 | **Activity Search** | `client/src/components/ActivitySearch.tsx` | `server/src/routes/activities.ts` | `Activity` |
+| 9 | **Trip Budget & Cost Breakdown** | `client/src/pages/BudgetBreakdown.tsx` | `server/src/routes/expenses.ts` | `Expense`, `Trip` |
+| 10 | **Trip Calendar / Timeline** | `client/src/pages/TripCalendar.tsx` | `server/src/routes/trips.ts` | `TripStop`, `StopActivity` |
+| 11 | **Shared/Public Itinerary View** | `client/src/pages/SharedTrip.tsx` | `server/src/routes/shares.ts` | `Trip`, `TripShare` |
+| 12 | **User Profile / Settings** | `client/src/pages/ProfileSettings.tsx` | `server/src/routes/profile.ts` | `User`, `UserPreference`, `SavedDestination` |
+| 13 | **Admin / Analytics Dashboard** | `client/src/pages/AdminDashboard.tsx` | `server/src/routes/admin.ts` | `Trip`, `City`, `User` |
 
 ---
 
-## 8. API Contracts
+## 5. Development Phases
+Implementation will be executed in 6 logical, incremental phases:
+
+### Phase 1: Authentication & Profile Settings (Screens 1 & 12)
+*   **Backend**: Setup `/api/auth` endpoints (register, login, logout, me) with bcrypt password hashing and JWT payload creation. Add profile management (`/api/profile`) endpoints to read/update user preferences and delete accounts.
+*   **Frontend**: Build login/signup page with forms for name, email, password, and basic front-end checks. Develop the settings screen for language selection and account management.
+
+### Phase 2: Trip Creation & Dashboard (Screens 2, 3 & 4)
+*   **Backend**: Setup `/api/trips` CRUD routes. Establish `/api/dashboard` returning aggregate analytics (active trip count, upcoming trip summary, total budget, saved destinations).
+*   **Frontend**: Build the home dashboard showing upcoming trip cards and the "Plan New Trip" trigger. Create forms to define trip parameters (name, dates, description, currency).
+
+### Phase 3: Cities & Activities Discovery (Screens 7 & 8)
+*   **Backend**: Build index queries for cities with name-matching fuzzy search and category filtering. Provide activity indexes for each city based on popularity and cost metrics.
+*   **Frontend**: Build the search panel interface allowing users to filter cities by region and browse local activities (e.g. food, sightseeing) with simple visual cards.
+
+### Phase 4: Itinerary Building & Calendars (Screens 5, 6 & 10)
+*   **Backend**: Configure stops management (`/api/trips/:tripId/stops`) ensuring strict chronological and order sorting logic. Build routes to assign specific activities to trip stops (`/api/stops/:stopId/activities`).
+*   **Frontend**: Develop the day-by-day Itinerary Builder. Implement drag-and-drop or sequential reordering of stops. Add the calendar view mode.
+
+### Phase 5: Budget Planning & Expenses (Screen 9)
+*   **Backend**: Build expense endpoints (`/api/trips/:tripId/expenses`) enabling categorical cost tracking (Stay, Meal, Transport, Activity, Other).
+*   **Frontend**: Create the budget visualizer containing category breakdowns (charts) and trigger warnings if accumulated stop/activity costs exceed the trip budget.
+
+### Phase 6: Public Sharing & Admin Panel (Screens 11 & 13)
+*   **Backend**: Setup public itinerary access routes via `shareSlug` and toggle visibility configurations. Add analytics routes for administrators.
+*   **Frontend**: Build the read-only public layout containing a "Copy Trip" option. Develop the admin panel with usage graphs.
+
+---
+
+## 6. Specific API Contracts
+
+All endpoints return a uniform payload structure:
+*   **Success**: `{ "message": "Success status msg", "data": { ... } }`
+*   **Error**: `{ "error": "Reason for failure", "details": [ ... ] }`
+
+### Auth Headers
+Protected endpoints require:
+`Authorization: Bearer <JWT_TOKEN>`
+
+---
 
 ### A. Authentication
-#### Register
-- **Endpoint**: `POST /api/auth/register`
-- **Auth Required**: No
-- **Request Body**:
-  ```json
-  {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "SecurePassword123"
-  }
-  ```
-- **Success Response (201)**:
-  ```json
-  {
-    "message": "User registered successfully",
-    "data": {
-      "user": {
-        "id": "uuid-string",
-        "name": "John Doe",
-        "email": "john@example.com"
+#### 1. Register User (`POST /api/auth/register`)
+*   **Request Body**:
+    ```json
+    {
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "password": "Password123"
+    }
+    ```
+*   **Success (201 Created)**:
+    ```json
+    {
+      "message": "User registered successfully",
+      "data": {
+        "user": {
+          "id": "u-uuid",
+          "name": "Jane Doe",
+          "email": "jane@example.com"
+        }
       }
     }
-  }
-  ```
+    ```
 
-#### Login
-- **Endpoint**: `POST /api/auth/login`
-- **Auth Required**: No
-- **Request Body**:
-  ```json
-  {
-    "email": "john@example.com",
-    "password": "SecurePassword123"
-  }
-  ```
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "Login successful",
-    "data": {
-      "token": "jwt-token-string",
-      "user": {
-        "id": "uuid-string",
-        "name": "John Doe",
-        "email": "john@example.com"
+#### 2. Login User (`POST /api/auth/login`)
+*   **Request Body**:
+    ```json
+    {
+      "email": "jane@example.com",
+      "password": "Password123"
+    }
+    ```
+*   **Success (200 OK)**:
+    ```json
+    {
+      "message": "Login successful",
+      "data": {
+        "token": "jwt-token-string",
+        "user": {
+          "id": "u-uuid",
+          "name": "Jane Doe",
+          "email": "jane@example.com"
+        }
       }
     }
-  }
-  ```
-
-#### Logout
-- **Endpoint**: `POST /api/auth/logout`
-- **Auth Required**: Yes
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "Logged out successfully"
-  }
-  ```
-
-#### Get Current User
-- **Endpoint**: `GET /api/auth/me`
-- **Auth Required**: Yes
-- **Success Response (200)**:
-  ```json
-  {
-    "data": {
-      "user": {
-        "id": "uuid-string",
-        "name": "John Doe",
-        "email": "john@example.com"
-      }
-    }
-  }
-  ```
+    ```
 
 ---
 
-### B. Trips
-#### Create Trip
-- **Endpoint**: `POST /api/trips`
-- **Auth Required**: Yes
-- **Request Body**:
-  ```json
-  {
-    "name": "Europe Summer Tour",
-    "description": "Exploring major European cities",
-    "startDate": "2026-08-22",
-    "endDate": "2026-09-05",
-    "budget": 200000.00,
-    "currency": "INR",
-    "visibility": "PRIVATE"
-  }
-  ```
-- **Success Response (201)**:
-  ```json
-  {
-    "message": "Trip created successfully",
-    "data": {
-      "id": "trip-uuid",
-      "name": "Europe Summer Tour",
-      ...
-    }
-  }
-  ```
-
-#### List Trips
-- **Endpoint**: `GET /api/trips`
-- **Auth Required**: Yes
-- **Success Response (200)**:
-  ```json
-  {
-    "data": [
-      {
-        "id": "trip-uuid",
-        "name": "Europe Summer Tour",
-        "startDate": "2026-08-22",
-        "endDate": "2026-09-05",
-        "visibility": "PRIVATE"
+### B. Dashboard
+#### 1. Retrieve Dashboard Data (`GET /api/dashboard`)
+*   **Success (200 OK)**:
+    ```json
+    {
+      "data": {
+        "welcomeMessage": "Hello, Jane Doe!",
+        "stats": {
+          "totalTrips": 3,
+          "savedDestinationsCount": 5,
+          "totalPlannedBudget": 150000.00
+        },
+        "recentTrips": [
+          {
+            "id": "t-uuid",
+            "name": "Goa Getaway",
+            "startDate": "2026-10-01",
+            "endDate": "2026-10-05",
+            "stopCount": 2
+          }
+        ],
+        "recommendations": [
+          {
+            "id": "c-uuid",
+            "name": "Shimla",
+            "country": "India",
+            "popularity": 95
+          }
+        ]
       }
-    ]
-  }
-  ```
-
-#### Get Trip Detail
-- **Endpoint**: `GET /api/trips/:id`
-- **Auth Required**: Yes (or Public if TripVisibility is PUBLIC)
-- **Success Response (200)**:
-  ```json
-  {
-    "data": {
-      "id": "trip-uuid",
-      "name": "Europe Summer Tour",
-      "stops": [],
-      "expenses": []
     }
-  }
-  ```
+    ```
 
 ---
 
-### C. Stops
-#### Create Stop
-- **Endpoint**: `POST /api/trips/:tripId/stops`
-- **Auth Required**: Yes (Ownership of tripId verified)
-- **Request Body**:
-  ```json
-  {
-    "cityId": "city-uuid",
-    "startDate": "2026-08-22",
-    "endDate": "2026-08-25",
-    "order": 1,
-    "notes": "First stop of the trip"
-  }
-  ```
-- **Success Response (201)**:
-  ```json
-  {
-    "message": "Trip stop created",
-    "data": {
-      "id": "stop-uuid",
-      "tripId": "trip-uuid",
-      "cityId": "city-uuid",
-      "order": 1
+### C. Trips
+#### 1. Create Trip (`POST /api/trips`)
+*   **Request Body**:
+    ```json
+    {
+      "name": "Monalisa & Alps",
+      "description": "Paris and Zurich trip",
+      "startDate": "2026-09-01T00:00:00.000Z",
+      "endDate": "2026-09-10T00:00:00.000Z",
+      "budget": 250000.00,
+      "currency": "INR",
+      "visibility": "PRIVATE"
     }
-  }
-  ```
-
----
-
-### D. Cities
-#### List Cities
-- **Endpoint**: `GET /api/cities`
-- **Query Params**: `?q=paris&country=France`
-- **Auth Required**: Yes
-- **Success Response (200)**:
-  ```json
-  {
-    "data": [
-      {
-        "id": "city-uuid",
-        "name": "Paris",
-        "country": "France",
-        "costIndex": 85.50
+    ```
+*   **Success (201 Created)**:
+    ```json
+    {
+      "message": "Trip created successfully",
+      "data": {
+        "id": "t-uuid",
+        "name": "Monalisa & Alps",
+        "startDate": "2026-09-01T00:00:00.000Z",
+        "endDate": "2026-09-10T00:00:00.000Z"
       }
-    ]
-  }
-  ```
-
----
-
-### E. Expenses
-#### Create Expense
-- **Endpoint**: `POST /api/trips/:tripId/expenses`
-- **Auth Required**: Yes (Ownership verified)
-- **Request Body**:
-  ```json
-  {
-    "tripStopId": "stop-uuid",
-    "category": "TRANSPORT",
-    "description": "Train ticket from Paris to Brussels",
-    "amount": 4500.00,
-    "currency": "INR",
-    "date": "2026-08-23"
-  }
-  ```
-- **Success Response (201)**:
-  ```json
-  {
-    "message": "Expense added successfully",
-    "data": {
-      "id": "expense-uuid",
-      "amount": 4500.00,
-      "category": "TRANSPORT"
     }
-  }
-  ```
+    ```
+
+#### 2. Get Trip Details (`GET /api/trips/:id`)
+*   **Success (200 OK)**:
+    ```json
+    {
+      "data": {
+        "id": "t-uuid",
+        "name": "Monalisa & Alps",
+        "budget": 250000.00,
+        "currency": "INR",
+        "visibility": "PRIVATE",
+        "shareSlug": "slug-xyz",
+        "stops": [
+          {
+            "id": "ts-uuid",
+            "city": { "name": "Paris", "country": "France" },
+            "startDate": "2026-09-01T00:00:00.000Z",
+            "endDate": "2026-09-05T00:00:00.000Z",
+            "order": 1,
+            "activities": []
+          }
+        ]
+      }
+    }
+    ```
 
 ---
 
-## 9. Testing & Validation Checklist (Ashish Gokani)
-- **Authentication checks**:
-  - Test registration with an email that already exists (should fail with 400).
-  - Test login with correct password vs incorrect password.
-  - Test access to `/api/trips/:id` where the trip belongs to another user (should fail with 403 Forbidden).
-- **Format checks**:
-  - Validate date parameters. `endDate` must be greater than or equal to `startDate`.
-  - Validate number boundaries (e.g. trip budgets and stop order numbers cannot be negative).
-- **Responsive views**:
-  - Check the rendering on iPhone SE width (375px) up to Full HD (1920px).
+### D. Itinerary Builder (Stops & Stop Activities)
+#### 1. Add Stop to Trip (`POST /api/trips/:tripId/stops`)
+*   **Request Body**:
+    ```json
+    {
+      "cityId": "c-uuid",
+      "startDate": "2026-09-01T00:00:00.000Z",
+      "endDate": "2026-09-05T00:00:00.000Z",
+      "order": 1,
+      "notes": "Exploring Paris"
+    }
+    ```
+*   **Success (201 Created)**:
+    ```json
+    {
+      "message": "Stop added successfully",
+      "data": {
+        "id": "ts-uuid",
+        "tripId": "t-uuid",
+        "cityId": "c-uuid",
+        "order": 1
+      }
+    }
+    ```
+
+#### 2. Assign Activity to Stop (`POST /api/stops/:stopId/activities`)
+*   **Request Body**:
+    ```json
+    {
+      "activityId": "a-uuid",
+      "date": "2026-09-02T00:00:00.000Z",
+      "startTime": "2026-09-02T10:00:00.000Z",
+      "endTime": "2026-09-02T12:00:00.000Z",
+      "order": 1,
+      "customCost": 1500.00,
+      "notes": "Eiffel Tower tickets booked online"
+    }
+    ```
+*   **Success (201 Created)**:
+    ```json
+    {
+      "message": "Activity assigned successfully",
+      "data": {
+        "id": "sa-uuid",
+        "tripStopId": "ts-uuid",
+        "activityId": "a-uuid",
+        "date": "2026-09-02"
+      }
+    }
+    ```
+
+---
+
+### E. City & Activity Search
+#### 1. Search Cities (`GET /api/cities`)
+*   **Query Params**: `q=paris`
+*   **Success (200 OK)**:
+    ```json
+    {
+      "data": [
+        {
+          "id": "c-uuid",
+          "name": "Paris",
+          "country": "France",
+          "region": "Europe",
+          "costIndex": 85.00,
+          "popularity": 98
+        }
+      ]
+    }
+    ```
+
+#### 2. Search Activities (`GET /api/activities`)
+*   **Query Params**: `cityId=c-uuid&type=SIGHTSEEING`
+*   **Success (200 OK)**:
+    ```json
+    {
+      "data": [
+        {
+          "id": "a-uuid",
+          "name": "Louvre Museum Tour",
+          "type": "SIGHTSEEING",
+          "estimatedCost": 2200.00,
+          "durationMinutes": 180
+        }
+      ]
+    }
+    ```
+
+---
+
+### F. Trip Budget & Expenses
+#### 1. Add Expense (`POST /api/trips/:tripId/expenses`)
+*   **Request Body**:
+    ```json
+    {
+      "tripStopId": "ts-uuid",
+      "category": "STAY",
+      "description": "Hotel Ibis Paris",
+      "amount": 25000.00,
+      "currency": "INR",
+      "date": "2026-09-01T00:00:00.000Z"
+    }
+    ```
+*   **Success (201 Created)**:
+    ```json
+    {
+      "message": "Expense logged successfully",
+      "data": {
+        "id": "e-uuid",
+        "category": "STAY",
+        "amount": 25000.00
+      }
+    }
+    ```
+
+---
+
+### G. Public Sharing
+#### 1. Retrieve Public Itinerary (`GET /api/shares/:shareSlug`)
+*   **Success (200 OK)**:
+    ```json
+    {
+      "data": {
+        "tripName": "Monalisa & Alps",
+        "creator": "Jane Doe",
+        "startDate": "2026-09-01",
+        "endDate": "2026-09-10",
+        "stops": [
+          {
+            "city": "Paris",
+            "country": "France",
+            "durationDays": 4,
+            "activities": ["Louvre Museum Tour"]
+          }
+        ]
+      }
+    }
+    ```
+
+---
+
+## 7. Testing & Validation Checklist
+
+### Backend & API Validations (Ashish V.)
+- [ ] **Auth Enforcement**: Try fetching `/api/trips` without a Bearer JWT (must return `401 Unauthorized`).
+- [ ] **Resource Isolation**: Request a trip belonging to user B while logged in as user A (must return `403 Forbidden`).
+- [ ] **Zod Schema Rejection**: Submit negative amounts for budgets or invalid date strings (must return `400 Bad Request` with exact Zod validation failures).
+- [ ] **Chronological Order Checking**: Submit a `tripStop` where the `startDate` is after the `endDate` (must return `400 Bad Request`).
+
+### UI Layout & Responsiveness Checklist (Harmin V.)
+- [ ] **Mobile Layout (375px)**: Dashboard, list items, and form panels collapse into vertical linear cards. Bottom navigation or side drawer adjusts properly.
+- [ ] **Tablet Layout (768px)**: Calendar timelines adjust. Columns transition to 2-grid formats.
+- [ ] **Desktop Layout (1024px to 1920px)**: Builder panels render alongside side search elements without stretching content excessively.
+- [ ] **Dynamic Theme Palette**: Ensure the Purple + White theme remains visually unified across components. Primary buttons have hover states.
+
+### Quality Assurance checks (Ashish G.)
+- [ ] **Fuzzy Search checks**: Validate city search works with partial name queries (e.g. `par` successfully locates `Paris`).
+- [ ] **Budget Warning System**: Set a trip budget to 10,000 INR, log an expense of 12,000 INR, and check if the frontend displays warning alerts.
+- [ ] **Shared Link Duplication**: Test the "Copy Trip" option on a shared link page using a different logged-in account (validating trip stops copy over).
