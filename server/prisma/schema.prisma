@@ -52,6 +52,9 @@ model User {
 
   profilePhoto String?
 
+  resetToken        String?   @unique
+  resetTokenExpires DateTime?
+
   role         UserRole @default(USER)
 
   createdAt    DateTime @default(now())
@@ -65,9 +68,6 @@ model User {
   @@map("users")
 }
 
-// =========================
-// USER PREFERENCES
-// =========================
 
 model UserPreference {
   id        String @id @default(uuid())
@@ -82,10 +82,6 @@ model UserPreference {
 
   @@map("user_preferences")
 }
-
-// =========================
-// TRIP
-// =========================
 
 model Trip {
   id          String @id @default(uuid())

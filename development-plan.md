@@ -179,6 +179,59 @@ Protected endpoints require:
     }
     ```
 
+#### 3. Logout User (`POST /api/auth/logout`)
+*   **Auth Required**: Yes
+*   **Success (200 OK)**:
+    ```json
+    {
+      "message": "Logged out successfully"
+    }
+    ```
+
+#### 4. Get Current User (`GET /api/auth/me`)
+*   **Auth Required**: Yes
+*   **Success (200 OK)**:
+    ```json
+    {
+      "data": {
+        "user": {
+          "id": "u-uuid",
+          "name": "Jane Doe",
+          "email": "jane@example.com"
+        }
+      }
+    }
+    ```
+
+#### 5. Forgot Password (`POST /api/auth/forgot-password`)
+*   **Request Body**:
+    ```json
+    {
+      "email": "jane@example.com"
+    }
+    ```
+*   **Success (200 OK)**:
+    ```json
+    {
+      "message": "If this email is registered, a password reset link has been sent."
+    }
+    ```
+
+#### 6. Reset Password (`POST /api/auth/reset-password`)
+*   **Request Body**:
+    ```json
+    {
+      "token": "reset-token-value",
+      "newPassword": "NewPassword123"
+    }
+    ```
+*   **Success (200 OK)**:
+    ```json
+    {
+      "message": "Password reset successful. You can now log in with your new password."
+    }
+    ```
+
 ---
 
 ### B. Dashboard
@@ -267,7 +320,7 @@ Protected endpoints require:
       }
     }
     ```
-
+    
 ---
 
 ### D. Itinerary Builder (Stops & Stop Activities)
