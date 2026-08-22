@@ -1,17 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import type { User } from '../types/auth';
+import { authService } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (userData: User, token: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,35 +17,62 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Restore session on mount
   useEffect(() => {
-    // Check local storage for existing session/token
-    const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    if (storedUser && storedToken) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+    const restoreSession = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await authService.getMe();
+          setUser(res.data.user);
+        } catch (err) {
+          console.error("Session restoration failed:", err);
+          localStorage.removeItem('token');
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    restoreSession();
   }, []);
 
-  const login = (userData: User, token: string) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('token', token);
-    setUser(userData);
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const res = await authService.login(email, password);
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+    } catch (err) {
+      setUser(null);
+      localStorage.removeItem('token');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    setUser(null);
+  const register = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      await authService.register(name, email, password);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await authService.logout().catch((err) => console.warn("Logout request failed on server:", err));
+    } finally {
+      localStorage.removeItem('token');
+      setUser(null);
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

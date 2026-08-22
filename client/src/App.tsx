@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Auth } from './pages/Auth';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 function SetupDashboard() {
+  const { user, logout } = useAuth();
   const [serverHealth, setServerHealth] = useState<{ status: string; database: string } | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,23 +32,39 @@ function SetupDashboard() {
     checkHealth();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
       {/* Header */}
       <header className="bg-white border-b border-purple-100 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-purple-200">
+            <div className="h-10 w-10 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-purple-200">
               GT
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight m-0">GlobeTrotter</h1>
-              <p className="text-xs text-slate-500 m-0">Hackathon Foundation Setup</p>
+              <p className="text-xs text-slate-500 m-0">Travel Planner Dashboard</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="text-xs font-semibold text-slate-600">Client Ready</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="text-xs font-semibold text-slate-600">Logged in: {user?.name}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg border border-purple-100 transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -54,10 +74,10 @@ function SetupDashboard() {
         {/* Hero Section */}
         <section className="text-center space-y-4 max-w-3xl mx-auto py-6">
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            Initial Setup &amp; Architecture <span className="text-primary">Verified</span>
+            Authentication UI <span className="text-purple-600 font-black">Active</span>
           </h2>
           <p className="text-lg text-slate-600">
-            Decoupled React client &amp; Express server are initialized with strict TypeScript and Prisma 6 ORM PostgreSQL bindings. Ready for feature modules!
+            You have successfully logged in! Your user context is persisted and protected by the route middleware.
           </p>
         </section>
 
@@ -73,7 +93,7 @@ function SetupDashboard() {
             <button
               onClick={checkHealth}
               disabled={checking}
-              className="px-6 py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl shadow-md shadow-purple-100 transition-all duration-200 disabled:opacity-50 flex items-center space-x-2 cursor-pointer self-start md:self-auto"
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 flex items-center space-x-2 cursor-pointer self-start md:self-auto"
             >
               {checking ? 'Testing Connection...' : 'Re-verify Integration'}
             </button>
@@ -140,76 +160,7 @@ function SetupDashboard() {
             </div>
           )}
         </section>
-
-        {/* Project Context Panels */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Tech Stack */}
-          <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 space-y-4">
-            <h4 className="text-lg font-bold text-slate-900 border-b border-slate-50 pb-2">Technology Stack</h4>
-            <ul className="space-y-3 text-sm text-slate-600">
-              <li className="flex items-center space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span><strong>Frontend:</strong> React, TS, Context API</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span><strong>Styling:</strong> Tailwind CSS v4</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span><strong>Backend:</strong> Express, Node.js, TS</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span><strong>Database:</strong> PostgreSQL + Prisma 6 ORM</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Development Team */}
-          <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 space-y-4">
-            <h4 className="text-lg font-bold text-slate-900 border-b border-slate-50 pb-2">Project Team</h4>
-            <div className="space-y-3 text-sm text-slate-600">
-              <div>
-                <p className="font-semibold text-slate-800">Harmin Vekariya</p>
-                <p className="text-xs text-slate-500">Frontend Developer (React, Tailwind)</p>
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800">Ashish Vekariya</p>
-                <p className="text-xs text-slate-500">Backend Developer (Express, Prisma)</p>
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800">Ashish Gokani</p>
-                <p className="text-xs text-slate-500">Testing &amp; Integration Developer</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Git Workflow */}
-          <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 space-y-4">
-            <h4 className="text-lg font-bold text-slate-900 border-b border-slate-50 pb-2">Git Flow Rules</h4>
-            <ul className="space-y-3 text-sm text-slate-600">
-              <li className="flex items-start space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5"></span>
-                <span>Work on feature branches (e.g. <code className="bg-purple-50 text-primary px-1 rounded text-xs font-semibold">server-auth</code>)</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5"></span>
-                <span>Frontend pulls backend feature branch to integrate</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5"></span>
-                <span>Testing dev verifies integrations before merging to main</span>
-              </li>
-            </ul>
-          </div>
-        </section>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-purple-50 py-8 text-center text-xs text-slate-400">
-        <p>&copy; {new Date().getFullYear()} GlobeTrotter Travel Planner. All setup files verified.</p>
-      </footer>
     </div>
   );
 }
@@ -217,7 +168,28 @@ function SetupDashboard() {
 function App() {
   return (
     <AuthProvider>
-      <SetupDashboard />
+      <BrowserRouter>
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<Auth />} />
+          <Route path="/register" element={<Auth />} />
+          <Route path="/forgot-password" element={<Auth />} />
+          <Route path="/reset-password" element={<Auth />} />
+
+          {/* Protected Dashboard Route */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <SetupDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fallback Redirections */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }
