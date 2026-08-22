@@ -142,45 +142,7 @@ export const CreateTrip: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-12">
-      {/* Header */}
-      <header className="bg-white border-b border-purple-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <div className="h-10 w-10 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-purple-200">
-              GT
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight m-0">GlobeTrotter</h1>
-              <p className="text-xs text-slate-500 m-0">Travel Planner</p>
-            </div>
-          </div>
 
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="text-xs font-semibold text-purple-700 hover:text-purple-900"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => navigate('/trips')}
-              className="text-xs font-semibold text-purple-700 hover:text-purple-900"
-            >
-              My Trips
-            </button>
-            <div className="h-4 w-px bg-slate-200"></div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-semibold text-slate-600">Logged in: {user?.name}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg border border-purple-100 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* Main Container */}
       <main className="max-w-4xl mx-auto px-6 mt-8 space-y-8">

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { tripController } from '../controllers/trip.controller';
+import { shareController } from '../controllers/share.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -9,15 +10,36 @@ import {
   tripParamsSchema,
   tripQuerySchema,
 } from '../schemas/trip.schema';
+import { enableShareSchema } from '../schemas/share.schema';
 import stopRoutes from './stop.routes';
+import expenseRoutes from './expense.routes';
 
 const router = Router();
 
 // All trip routes require authentication
 router.use(authenticate);
 
-// Mount TripStops sub-router
+// Mount Sub-routers
 router.use('/:tripId/stops', stopRoutes);
+router.use('/:tripId/expenses', expenseRoutes);
+
+// Trip Share Management (Owner Only)
+router.post(
+  '/:tripId/share',
+  validate({ body: enableShareSchema }),
+  asyncHandler((req, res) => shareController.enableSharing(req, res))
+);
+
+router.patch(
+  '/:tripId/share',
+  validate({ body: enableShareSchema }),
+  asyncHandler((req, res) => shareController.enableSharing(req, res))
+);
+
+router.delete(
+  '/:tripId/share',
+  asyncHandler((req, res) => shareController.disableSharing(req, res))
+);
 
 router.post(
   '/',
