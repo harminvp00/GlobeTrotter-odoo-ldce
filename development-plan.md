@@ -336,7 +336,7 @@ Protected endpoints require:
     }
     ```
 *   **Success (201 Created)**:
-    ```json
+    ```jsoni
     {
       "message": "Stop added successfully",
       "data": {
