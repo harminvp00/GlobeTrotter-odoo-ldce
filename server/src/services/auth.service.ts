@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput } from '../schemas/auth.schema';
 import { AppError } from '../middleware/error.middleware';
+import { sendPasswordResetEmail } from '../lib/mailer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -116,7 +117,11 @@ export class AuthService {
         },
       });
 
-      console.log(`[AUTH HACKATHON LOG] Reset token for ${normalizedEmail}: ${resetToken}`);
+      try {
+        await sendPasswordResetEmail(normalizedEmail, resetToken);
+      } catch (emailErr) {
+        console.error(`[AUTH MAIL ERROR] Failed to send email to ${normalizedEmail}:`, emailErr);
+      }
     }
 
     return {
