@@ -6,6 +6,13 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { MyTrips } from './pages/MyTrips';
 import { CreateTrip } from './pages/CreateTrip';
 import { ItineraryBuilder } from './pages/ItineraryBuilder';
+import { Dashboard } from './pages/Dashboard';
+import { ProfileSettings } from './pages/ProfileSettings';
+import { PublicItinerary } from './pages/PublicItinerary';
+import { AdminAnalytics } from './pages/AdminAnalytics';
+import { CitiesExplore } from './pages/CitiesExplore';
+import { ActivitiesExplore } from './pages/ActivitiesExplore';
+import { Navbar } from './components/Navbar';
 
 function SetupDashboard() {
   const { user, logout } = useAuth();
@@ -113,10 +120,12 @@ function SetupDashboard() {
   );
 }
 
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <Navbar />
         <Routes>
           {/* Auth Routes */}
           <Route path="/login" element={<Auth />} />
@@ -129,9 +138,50 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <SetupDashboard />
+                <Dashboard />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminAnalytics />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/cities"
+            element={
+              <ProtectedRoute>
+                <CitiesExplore />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/activities"
+            element={
+              <ProtectedRoute>
+                <ActivitiesExplore />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/shares/:shareSlug"
+            element={<PublicItinerary />}
           />
 
           <Route
