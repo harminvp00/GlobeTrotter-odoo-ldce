@@ -9,11 +9,15 @@ import {
   tripParamsSchema,
   tripQuerySchema,
 } from '../schemas/trip.schema';
+import stopRoutes from './stop.routes';
 
 const router = Router();
 
 // All trip routes require authentication
 router.use(authenticate);
+
+// Mount TripStops sub-router
+router.use('/:tripId/stops', stopRoutes);
 
 router.post(
   '/',
