@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
+import authRoutes from './routes/auth.routes';
+import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
 
@@ -25,7 +27,15 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// API Routes
+app.use('/api/auth', authRoutes);
+
+// Global Error Handler
+app.use(errorHandler);
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
 export default app;
+
