@@ -1,0 +1,404 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// =========================
+// ENUMS
+// =========================
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum TripVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ExpenseCategory {
+  TRANSPORT
+  STAY
+  ACTIVITY
+  MEAL
+  OTHER
+}
+
+enum ActivityType {
+  SIGHTSEEING
+  FOOD
+  ADVENTURE
+  SHOPPING
+  CULTURE
+  ENTERTAINMENT
+  NATURE
+  OTHER
+}
+
+
+// =========================
+// USER
+// =========================
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+
+  profilePhoto String?
+
+  role         UserRole @default(USER)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  trips              Trip[]
+  preferences        UserPreference?
+  savedDestinations  SavedDestination[]
+  tripShares         TripShare[]
+
+  @@map("users")
+}
+
+
+// =========================
+// USER PREFERENCES
+// =========================
+
+model UserPreference {
+  id        String @id @default(uuid())
+
+  userId    String @unique
+  language  String @default("en")
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+
+// =========================
+// TRIP
+// =========================
+
+model Trip {
+  id          String @id @default(uuid())
+
+  userId      String
+
+  name        String
+  description String?
+
+  startDate   DateTime
+  endDate     DateTime
+
+  coverPhoto  String?
+
+  budget      Decimal? @db.Decimal(12, 2)
+  currency    String   @default("INR")
+
+  visibility  TripVisibility @default(PRIVATE)
+
+  shareSlug   String? @unique
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  stops     TripStop[]
+  expenses  Expense[]
+  shares    TripShare[]
+
+  @@index([userId])
+  @@index([startDate])
+  @@map("trips")
+}
+
+
+// =========================
+// CITY
+// =========================
+
+model City {
+  id          String @id @default(uuid())
+
+  name        String
+  country     String
+  countryCode String?
+
+  region      String?
+
+  description String?
+
+  imageUrl    String?
+
+  latitude    Decimal? @db.Decimal(10, 7)
+  longitude   Decimal? @db.Decimal(10, 7)
+
+  costIndex   Decimal? @db.Decimal(5, 2)
+  popularity  Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tripStops          TripStop[]
+  activities         Activity[]
+  savedDestinations  SavedDestination[]
+
+  @@index([name])
+  @@index([country])
+  @@index([region])
+  @@map("cities")
+}
+
+
+// =========================
+// TRIP STOP
+// =========================
+
+model TripStop {
+  id String @id @default(uuid())
+
+  tripId String
+  cityId String
+
+  startDate DateTime
+  endDate   DateTime
+
+  order Int
+
+  notes String?
+
+  trip Trip @relation(
+    fields: [tripId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  city City @relation(
+    fields: [cityId],
+    references: [id],
+    onDelete: Restrict
+  )
+
+  activities StopActivity[]
+  expenses   Expense[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tripId, order])
+  @@index([tripId])
+  @@index([cityId])
+  @@map("trip_stops")
+}
+
+
+// =========================
+// ACTIVITY
+// =========================
+
+model Activity {
+  id String @id @default(uuid())
+
+  cityId String
+
+  name        String
+  description String?
+
+  type ActivityType
+
+  durationMinutes Int?
+
+  estimatedCost Decimal? @db.Decimal(10, 2)
+  currency       String  @default("INR")
+
+  imageUrl String?
+
+  popularity Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city City @relation(
+    fields: [cityId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  stopActivities StopActivity[]
+
+  @@index([cityId])
+  @@index([type])
+  @@index([name])
+  @@map("activities")
+}
+
+
+// =========================
+// STOP ACTIVITY
+// =========================
+
+model StopActivity {
+  id String @id @default(uuid())
+
+  tripStopId String
+  activityId String
+
+  date DateTime
+
+  startTime DateTime?
+  endTime   DateTime?
+
+  order Int
+
+  notes String?
+
+  customCost Decimal? @db.Decimal(10, 2)
+
+  tripStop TripStop @relation(
+    fields: [tripStopId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  activity Activity @relation(
+    fields: [activityId],
+    references: [id],
+    onDelete: Restrict
+  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripStopId])
+  @@index([activityId])
+  @@index([date])
+  @@map("stop_activities")
+}
+
+
+// =========================
+// EXPENSE
+// =========================
+
+model Expense {
+  id String @id @default(uuid())
+
+  tripId String
+
+  tripStopId String?
+
+  category ExpenseCategory
+
+  description String
+
+  amount Decimal @db.Decimal(12, 2)
+
+  currency String @default("INR")
+
+  date DateTime
+
+  trip Trip @relation(
+    fields: [tripId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  tripStop TripStop? @relation(
+    fields: [tripStopId],
+    references: [id],
+    onDelete: SetNull
+  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId])
+  @@index([tripStopId])
+  @@index([category])
+  @@index([date])
+  @@map("expenses")
+}
+
+
+// =========================
+// TRIP SHARE
+// =========================
+
+model TripShare {
+  id String @id @default(uuid())
+
+  tripId String
+  userId String?
+
+  canEdit Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  trip Trip @relation(
+    fields: [tripId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  user User? @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([tripId])
+  @@index([userId])
+  @@map("trip_shares")
+}
+
+
+// =========================
+// SAVED DESTINATION
+// =========================
+
+model SavedDestination {
+  id String @id @default(uuid())
+
+  userId String
+  cityId String
+
+  createdAt DateTime @default(now())
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  city City @relation(
+    fields: [cityId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([userId, cityId])
+  @@index([userId])
+  @@index([cityId])
+  @@map("saved_destinations")
+}
