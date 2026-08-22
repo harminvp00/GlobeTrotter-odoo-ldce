@@ -10,14 +10,16 @@ import {
   tripQuerySchema,
 } from '../schemas/trip.schema';
 import stopRoutes from './stop.routes';
+import expenseRoutes from './expense.routes';
 
 const router = Router();
 
 // All trip routes require authentication
 router.use(authenticate);
 
-// Mount TripStops sub-router
+// Mount Sub-routers
 router.use('/:tripId/stops', stopRoutes);
+router.use('/:tripId/expenses', expenseRoutes);
 
 router.post(
   '/',
