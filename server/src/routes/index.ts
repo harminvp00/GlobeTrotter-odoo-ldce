@@ -5,6 +5,7 @@ import stopActivityRoutes from './stopActivity.routes';
 import dashboardRoutes from './dashboard.routes';
 import shareRoutes from './share.routes';
 import profileRoutes from './profile.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -25,5 +26,8 @@ router.use('/dashboard', dashboardRoutes);
 
 // Public Sharing Module Routes (/api/shares)
 router.use('/shares', shareRoutes);
+
+// Admin / Analytics Module Routes (/api/admin)
+router.use('/admin', adminRoutes);
 
 export default router;
