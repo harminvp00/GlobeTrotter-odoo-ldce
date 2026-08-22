@@ -1,25 +1,27 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import { env } from './config/env';
 import { prisma } from './lib/prisma';
-import authRoutes from './routes/auth.routes';
+import apiRouter from './routes';
+import { notFoundHandler } from './middleware/notFound.middleware';
 import { errorHandler } from './middleware/error.middleware';
 
-dotenv.config();
-
 const app = express();
-const port = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true
-}));
+// CORS Configuration
+app.use(
+  cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 
+// Body Parser Middleware
 app.use(express.json());
 
+// Health Check Endpoint
 app.get('/health', async (req, res) => {
   try {
-    // Basic database connection check
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'OK', database: 'CONNECTED' });
   } catch (error: any) {
@@ -27,15 +29,19 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
+// Central API Routes
+app.use('/api', apiRouter);
 
-// Global Error Handler
+// 404 Route Handler
+app.use(notFoundHandler);
+
+// Global Error Handler Middleware
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(env.PORT, () => {
+    console.log(`🚀 GlobeTrotter Backend Server running on port ${env.PORT}`);
+  });
+}
 
 export default app;
-

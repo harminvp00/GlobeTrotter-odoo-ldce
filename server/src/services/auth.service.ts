@@ -5,9 +5,7 @@ import { prisma } from '../lib/prisma';
 import { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput } from '../schemas/auth.schema';
 import { AppError } from '../middleware/error.middleware';
 import { sendPasswordResetEmail } from '../lib/mailer';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+import { env } from '../config/env';
 
 const safeUserSelect = {
   id: true,
@@ -68,8 +66,8 @@ export class AuthService {
         email: user.email,
         role: user.role,
       },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN as any }
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN as any }
     );
 
     const safeUser = {

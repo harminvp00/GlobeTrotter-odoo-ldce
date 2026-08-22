@@ -1,21 +1,21 @@
 import nodemailer from 'nodemailer';
+import { env } from '../config/env';
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587', 10),
-  secure: process.env.SMTP_SECURE === 'true', // false for port 587
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  secure: false, // port 587
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
   },
 });
 
 export const sendPasswordResetEmail = async (toEmail: string, resetToken: string): Promise<void> => {
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-  const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
+  const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
   const mailOptions = {
-    from: `"GlobeTrotter Support" <${process.env.SMTP_USER}>`,
+    from: `"GlobeTrotter Support" <${env.SMTP_USER}>`,
     to: toEmail,
     subject: 'Password Reset Request - GlobeTrotter',
     html: `

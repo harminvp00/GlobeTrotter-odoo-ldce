@@ -3,9 +3,9 @@ import { ZodError } from 'zod';
 
 export class AppError extends Error {
   public statusCode: number;
-  public details?: any[];
+  public details: any[];
 
-  constructor(message: string, statusCode: number = 400, details?: any[]) {
+  constructor(message: string, statusCode: number = 400, details: any[] = []) {
     super(message);
     this.statusCode = statusCode;
     this.details = details;
@@ -33,18 +33,17 @@ export const errorHandler = (
   }
 
   if (err instanceof AppError) {
-    const response: { error: string; details?: any[] } = {
+    res.status(err.statusCode).json({
       error: err.message,
-    };
-    if (err.details) {
-      response.details = err.details;
-    }
-    res.status(err.statusCode).json(response);
+      details: err.details || [],
+    });
     return;
   }
 
-  console.error('Unhandled error:', err);
+  console.error('Unhandled server error:', err);
+
   res.status(500).json({
     error: err.message || 'Internal server error',
+    details: [],
   });
 };
